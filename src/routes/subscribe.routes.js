@@ -30,7 +30,7 @@ router.post("/", async (req, res) => {
 
     const transporter = getTransporter();
 
-   const verifyLink = `${process.env.API_URL}/api/subscribe/verify/${token}`;
+   const verifyLink = `${process.env.CLIENT_URL}/verify-email/${token}`;
 
 await transporter.sendMail({
   from: `"Brandnatic" <${process.env.MAIL_USER}>`,
