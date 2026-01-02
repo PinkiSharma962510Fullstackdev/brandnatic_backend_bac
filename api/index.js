@@ -1,2 +1,7 @@
 import app from "../src/app.js";
-export default app;
+import connectDB from "../src/config/db.js";
+
+// 🔥 SERVERLESS ENTRY
+await connectDB();
+
+export default app
