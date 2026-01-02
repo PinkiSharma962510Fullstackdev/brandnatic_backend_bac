@@ -106,10 +106,9 @@ router.get("/verify/:token", async (req, res) => {
       subscriber.token = null;
       await subscriber.save();
 
-      return res.send(`
-        <h2>✅ Email verify ho gaya</h2>
-        <p>Aap ab comment kar sakte ho.</p>
-      `);
+      return res.redirect(
+  `${process.env.CLIENT_URL}/verified?status=success`
+);
     }
 
     // 3️⃣ Token nahi mila → check already verified user
@@ -117,22 +116,21 @@ router.get("/verify/:token", async (req, res) => {
       verified: true,
     });
 
-    if (alreadyVerified) {
-      return res.send(`
-        <h2>✅ Email already verified</h2>
-        <p>Aap pehle hi verify kar chuke ho.</p>
-      `);
-    }
+   if (alreadyVerified) {
+  return res.redirect(`${process.env.CLIENT_URL}/verified?status=already`);
+}
+
 
     // 4️⃣ Actual invalid case
-    return res.send(`
-      <h2>❌ Invalid verification link</h2>
-      <p>Please subscribe again.</p>
-    `);
+   return res.redirect(
+  `${process.env.CLIENT_URL}/verified?status=invalid`
+);
 
   } catch (err) {
     console.error(err);
-    res.send("❌ Verification failed");
+    return res.redirect(
+  `${process.env.CLIENT_URL}/verified?status=error`
+);
   }
 });
 
