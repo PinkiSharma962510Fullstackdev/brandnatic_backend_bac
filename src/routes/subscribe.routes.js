@@ -93,46 +93,72 @@ res.json({ message: "Verification email sent" });
 //   }
 // });
 
+// router.get("/verify/:token", async (req, res) => {
+//   try {
+//     const { token } = req.params;
+
+//     // 1️⃣ Find by token
+//     const subscriber = await Subscriber.findOne({ token });
+
+//     // 2️⃣ Agar token mila → verify karo
+//     if (subscriber) {
+//       subscriber.verified = true;
+//       subscriber.token = null;
+//       await subscriber.save();
+
+//       return res.redirect(
+//   `${process.env.CLIENT_URL}/verified?status=success`
+// );
+//     }
+
+//     // 3️⃣ Token nahi mila → check already verified user
+//     const alreadyVerified = await Subscriber.findOne({
+//       verified: true,
+//     });
+
+//    if (alreadyVerified) {
+//   return res.redirect(`${process.env.CLIENT_URL}/verified?status=already`);
+// }
+
+
+//     // 4️⃣ Actual invalid case
+//    return res.redirect(
+//   `${process.env.CLIENT_URL}/verified?status=invalid`
+// );
+
+//   } catch (err) {
+//     console.error(err);
+//     return res.redirect(
+//   `${process.env.CLIENT_URL}/verified?status=error`
+// );
+//   }
+// });
+
+
 router.get("/verify/:token", async (req, res) => {
   try {
     const { token } = req.params;
 
-    // 1️⃣ Find by token
     const subscriber = await Subscriber.findOne({ token });
 
-    // 2️⃣ Agar token mila → verify karo
-    if (subscriber) {
-      subscriber.verified = true;
-      subscriber.token = null;
-      await subscriber.save();
-
-      return res.redirect(
-  `${process.env.CLIENT_URL}/verified?status=success`
-);
+    if (!subscriber) {
+      return res.status(400).json({ verified: false });
     }
 
-    // 3️⃣ Token nahi mila → check already verified user
-    const alreadyVerified = await Subscriber.findOne({
-      verified: true,
-    });
+    if (subscriber.verified) {
+      return res.json({ verified: true, already: true });
+    }
 
-   if (alreadyVerified) {
-  return res.redirect(`${process.env.CLIENT_URL}/verified?status=already`);
-}
+    subscriber.verified = true;
+    subscriber.token = null;
+    await subscriber.save();
 
-
-    // 4️⃣ Actual invalid case
-   return res.redirect(
-  `${process.env.CLIENT_URL}/verified?status=invalid`
-);
-
+    return res.json({ verified: true });
   } catch (err) {
-    console.error(err);
-    return res.redirect(
-  `${process.env.CLIENT_URL}/verified?status=error`
-);
+    return res.status(500).json({ verified: false });
   }
 });
+
 
 
 router.get("/status", async (req, res) => {
