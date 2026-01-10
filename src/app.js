@@ -53,6 +53,7 @@ import publicCommentRoutes from "./routes/comment.public.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import enquiryRoutes from "./routes/enquiry.routes.js";
 import subscribeRoutes from "./routes/subscribe.routes.js"; 
+import sitemapRoute from "./routes/sitemap.route.js";
 
 const app = express();
 
@@ -90,5 +91,7 @@ app.use("/api/subscribe", subscribeRoutes);
 app.get("/", (req, res) => {
   res.send("API running successfully 🚀");
 });
+app.use("/", sitemapRoute);
+
 
 export default app;

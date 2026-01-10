@@ -147,28 +147,100 @@ export const getBlogById = async (req, res) => {
 // };
 
 
+// export const updateBlog = async (req, res) => {
+//   try {
+//     const blog = await Blog.findById(req.params.id);
+
+//     if (!blog) {
+//       return res.status(404).json({ message: "Blog not found" });
+//     }
+
+//     blog.title = req.body.title || blog.title;
+//     blog.contentHTML = req.body.contentHTML || blog.contentHTML;
+//     blog.coverImage = req.body.coverImage || blog.coverImage;
+//     blog.status = req.body.status || blog.status;
+
+//     if (Array.isArray(req.body.faqs)) {
+//       blog.faqs = req.body.faqs;
+//     }
+
+//     // ✅ slug untouched (SEO + no duplicate issues)
+
+//     await blog.save();
+//     res.json(blog);
+//   } catch (err) {
+//     res.status(500).json({ message: err.message });
+//   }
+// };
+import slugify from "slugify";
+import Blog from "../models/Blog.js";
+
 export const updateBlog = async (req, res) => {
   try {
+    const {
+      title,
+      contentHTML,
+      coverImage,
+      status,
+      faqs,
+      seoTitle,
+      seoDescription,
+      slug: customSlug,
+    } = req.body;
+
     const blog = await Blog.findById(req.params.id);
 
     if (!blog) {
       return res.status(404).json({ message: "Blog not found" });
     }
 
-    blog.title = req.body.title || blog.title;
-    blog.contentHTML = req.body.contentHTML || blog.contentHTML;
-    blog.coverImage = req.body.coverImage || blog.coverImage;
-    blog.status = req.body.status || blog.status;
-
-    if (Array.isArray(req.body.faqs)) {
-      blog.faqs = req.body.faqs;
+    // ❌ basic validation
+    if (!title || !contentHTML) {
+      return res.status(400).json({ message: "Title & content required" });
     }
 
-    // ✅ slug untouched (SEO + no duplicate issues)
+    // ✅ SLUG LOGIC (WordPress style)
+    const baseSlug = customSlug
+      ? slugify(customSlug, { lower: true, strict: true })
+      : slugify(title, { lower: true, strict: true });
+
+    let finalSlug = baseSlug;
+    let attempt = 0;
+
+    // 🔁 duplicate slug protection
+    while (true) {
+      const exists = await Blog.findOne({
+        slug: finalSlug,
+        _id: { $ne: blog._id },
+      });
+
+      if (!exists) break;
+
+      attempt++;
+      finalSlug = `${baseSlug}-${attempt}`;
+    }
+
+    // ✅ UPDATE FIELDS
+    blog.title = title;
+    blog.slug = finalSlug;
+    blog.contentHTML = contentHTML;
+    blog.coverImage = coverImage || blog.coverImage;
+    blog.status = status || blog.status;
+
+    blog.seoTitle = seoTitle || title;
+    blog.seoDescription =
+      seoDescription ||
+      contentHTML.replace(/<[^>]*>/g, "").slice(0, 155);
+
+    if (Array.isArray(faqs)) {
+      blog.faqs = faqs;
+    }
 
     await blog.save();
+
     res.json(blog);
   } catch (err) {
+    console.error("UPDATE BLOG ERROR:", err);
     res.status(500).json({ message: err.message });
   }
 };
