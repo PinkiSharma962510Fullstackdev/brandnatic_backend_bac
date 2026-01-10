@@ -4,31 +4,79 @@ import slugify from "slugify";
 /* =========================
    CREATE BLOG
 ========================= */
+console.log("🔥🔥 NEW CREATE BLOG CODE LOADED 🔥🔥");
+
+
+
 export const createBlog = async (req, res) => {
-  try {
-    const { title, contentHTML, coverImage, status, faqs } = req.body;
+  const {
+    title,
+    contentHTML,
+    coverImage,
+    status,
+    faqs,
+    seoTitle,
+    seoDescription,
+    slug: customSlug, // 👈 ADMIN PROVIDED SLUG
+  } = req.body;
 
-    if (!title || !contentHTML) {
-      return res.status(400).json({ message: "Title & content required" });
-    }
-
-    const slug = slugify(title, { lower: true, strict: true });
-
-    const blog = await Blog.create({
-      title,
-      slug,
-      contentHTML,
-      coverImage,
-      status: status || "draft",
-      faqs: Array.isArray(faqs) ? faqs : [], // ✅ ADD ONLY THIS
-      author: req.user._id,
+  /* ================= BASIC VALIDATION ================= */
+  if (!title || !contentHTML) {
+    return res.status(400).json({
+      message: "Title & content required",
     });
+  }
 
-    res.status(201).json(blog);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+  /* ================= SLUG LOGIC (WP STYLE) ================= */
+  const baseSlug = customSlug
+    ? slugify(customSlug, { lower: true, strict: true })
+    : slugify(title, { lower: true, strict: true });
+
+  let slug = baseSlug;
+  let attempt = 0;
+
+  /* ================= CREATE WITH DUPLICATE SAFE ================= */
+  while (true) {
+    try {
+      const blog = await Blog.create({
+        title,
+        slug,
+        contentHTML,
+        coverImage,
+
+        /* ✅ SEO AUTO FALLBACK */
+        seoTitle: seoTitle || title,
+        seoDescription:
+          seoDescription ||
+          contentHTML.replace(/<[^>]*>/g, "").slice(0, 155),
+
+        status: status || "draft",
+        faqs: Array.isArray(faqs) ? faqs : [],
+      });
+
+      return res.status(201).json(blog);
+    } catch (err) {
+      /* 🔥 ONLY handle duplicate slug */
+      if (err.code === 11000 && err.keyPattern?.slug) {
+        attempt++;
+        slug = `${baseSlug}-${attempt}`;
+      } else {
+        console.error("CREATE BLOG ERROR:", err);
+        return res.status(500).json({
+          message: err.message,
+        });
+      }
+    }
   }
 };
+
+
+
+
+
+
+
+
 
 /* =========================
    GET ALL BLOGS (ADMIN)
@@ -65,6 +113,40 @@ export const getBlogById = async (req, res) => {
 /* =========================
    UPDATE BLOG
 ========================= */
+// export const updateBlog = async (req, res) => {
+//   try {
+//     const blog = await Blog.findById(req.params.id);
+
+//     if (!blog) {
+//       return res.status(404).json({ message: "Blog not found" });
+//     }
+
+//     blog.title = req.body.title || blog.title;
+//     blog.contentHTML = req.body.contentHTML || blog.contentHTML;
+//     blog.coverImage = req.body.coverImage || blog.coverImage;
+//     blog.status = req.body.status || blog.status;
+
+//     // ✅ ADD FAQs UPDATE (SAFE)
+//     if (Array.isArray(req.body.faqs)) {
+//       blog.faqs = req.body.faqs;
+//     }
+
+//     if (req.body.title && req.body.title !== blog.title) {
+//   blog.slug =
+//     slugify(req.body.title, { lower: true, strict: true }) +
+//     "-" +
+//     Date.now();
+// }
+
+
+//     await blog.save();
+//     res.json(blog);
+//   } catch (err) {
+//     res.status(500).json({ message: err.message });
+//   }
+// };
+
+
 export const updateBlog = async (req, res) => {
   try {
     const blog = await Blog.findById(req.params.id);
@@ -78,17 +160,11 @@ export const updateBlog = async (req, res) => {
     blog.coverImage = req.body.coverImage || blog.coverImage;
     blog.status = req.body.status || blog.status;
 
-    // ✅ ADD FAQs UPDATE (SAFE)
     if (Array.isArray(req.body.faqs)) {
       blog.faqs = req.body.faqs;
     }
 
-    if (req.body.title) {
-      blog.slug = slugify(req.body.title, {
-        lower: true,
-        strict: true,
-      });
-    }
+    // ✅ slug untouched (SEO + no duplicate issues)
 
     await blog.save();
     res.json(blog);
