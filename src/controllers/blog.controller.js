@@ -172,7 +172,7 @@ export const getBlogById = async (req, res) => {
 //     res.status(500).json({ message: err.message });
 //   }
 // };
-import slugify from "slugify";
+
 import Blog from "../models/Blog.js";
 
 export const updateBlog = async (req, res) => {
