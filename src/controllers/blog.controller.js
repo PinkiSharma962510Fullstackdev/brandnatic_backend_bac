@@ -173,7 +173,7 @@ export const getBlogById = async (req, res) => {
 //   }
 // };
 
-import Blog from "../models/Blog.js";
+
 
 export const updateBlog = async (req, res) => {
   try {
