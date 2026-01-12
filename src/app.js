@@ -77,10 +77,10 @@ app.use("/api/users", userRoutes);
 // BLOGS
 app.use("/api/blogs", blogRoutes);
 
-// ✅ PUBLIC COMMENTS (WEBSITE)
+//  PUBLIC COMMENTS (WEBSITE)
 app.use("/api/comments", publicCommentRoutes);
 
-// ✅ ADMIN COMMENTS (DASHBOARD)
+//  ADMIN COMMENTS (DASHBOARD)
 app.use("/api/admin/comments", adminCommentRoutes);
 
 // ENQUIRY

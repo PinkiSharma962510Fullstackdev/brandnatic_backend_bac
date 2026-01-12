@@ -194,12 +194,12 @@ export const updateBlog = async (req, res) => {
       return res.status(404).json({ message: "Blog not found" });
     }
 
-    // ❌ basic validation
+    //  basic validation
     if (!title || !contentHTML) {
       return res.status(400).json({ message: "Title & content required" });
     }
 
-    // ✅ SLUG LOGIC (WordPress style)
+    //  SLUG LOGIC (WordPress style)
     const baseSlug = customSlug
       ? slugify(customSlug, { lower: true, strict: true })
       : slugify(title, { lower: true, strict: true });
@@ -288,15 +288,19 @@ export const deleteBlog = async (req, res) => {
 ========================= */
 export const getPublicBlogs = async (req, res) => {
   try {
+    const limit = parseInt(req.query.limit) || 3;
+
     const blogs = await Blog.find({ status: "published" })
       .sort({ createdAt: -1 })
-      .select("title slug contentHTML coverImage createdAt");
+      .limit(limit)
+      .select("title slug coverImage excerpt createdAt");
 
     res.json(blogs);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
+
 
 /* =========================
    GET SINGLE BLOG (PUBLIC)
