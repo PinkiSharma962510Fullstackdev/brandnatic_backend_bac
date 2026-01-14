@@ -8,6 +8,76 @@ console.log("🔥🔥 NEW CREATE BLOG CODE LOADED 🔥🔥");
 
 
 
+// export const createBlog = async (req, res) => {
+//   const {
+//     title,
+//     contentHTML,
+//     coverImage,
+//     status,
+//     faqs,
+//     seoTitle,
+//     seoDescription,
+//     slug: customSlug, // 👈 ADMIN PROVIDED SLUG
+//   } = req.body;
+
+//   /* ================= BASIC VALIDATION ================= */
+//   if (!title || !contentHTML) {
+//     return res.status(400).json({
+//       message: "Title & content required",
+//     });
+//   }
+
+//   /* ================= SLUG LOGIC (WP STYLE) ================= */
+//   const baseSlug = customSlug
+//     ? slugify(customSlug, { lower: true, strict: true })
+//     : slugify(title, { lower: true, strict: true });
+
+//   let slug = baseSlug;
+//   let attempt = 0;
+
+//   /* ================= CREATE WITH DUPLICATE SAFE ================= */
+//   while (true) {
+//     try {
+//       //  SAFE AUTO COVER (admin flow unchanged)
+// let finalCoverImage = coverImage;
+
+// if (!finalCoverImage) {
+//   const match = contentHTML.match(/<img[^>]+src="([^">]+)"/i);
+//   finalCoverImage = match ? match[1] : "";
+// }
+//       const blog = await Blog.create({
+//         title,
+//         slug,
+//         contentHTML,
+//         coverImage,
+
+//         /* ✅ SEO AUTO FALLBACK */
+//         seoTitle: seoTitle || title,
+//         seoDescription:
+//           seoDescription ||
+//           contentHTML.replace(/<[^>]*>/g, "").slice(0, 155),
+
+//         status: status || "draft",
+//         faqs: Array.isArray(faqs) ? faqs : [],
+//       });
+
+//       return res.status(201).json(blog);
+//     } catch (err) {
+//       /* 🔥 ONLY handle duplicate slug */
+//       if (err.code === 11000 && err.keyPattern?.slug) {
+//         attempt++;
+//         slug = `${baseSlug}-${attempt}`;
+//       } else {
+//         console.error("CREATE BLOG ERROR:", err);
+//         return res.status(500).json({
+//           message: err.message,
+//         });
+//       }
+//     }
+//   }
+// };
+
+
 export const createBlog = async (req, res) => {
   const {
     title,
@@ -17,17 +87,13 @@ export const createBlog = async (req, res) => {
     faqs,
     seoTitle,
     seoDescription,
-    slug: customSlug, // 👈 ADMIN PROVIDED SLUG
+    slug: customSlug,
   } = req.body;
 
-  /* ================= BASIC VALIDATION ================= */
   if (!title || !contentHTML) {
-    return res.status(400).json({
-      message: "Title & content required",
-    });
+    return res.status(400).json({ message: "Title & content required" });
   }
 
-  /* ================= SLUG LOGIC (WP STYLE) ================= */
   const baseSlug = customSlug
     ? slugify(customSlug, { lower: true, strict: true })
     : slugify(title, { lower: true, strict: true });
@@ -35,16 +101,22 @@ export const createBlog = async (req, res) => {
   let slug = baseSlug;
   let attempt = 0;
 
-  /* ================= CREATE WITH DUPLICATE SAFE ================= */
   while (true) {
     try {
+      // ✅ SAFE AUTO COVER (admin flow unchanged)
+      let finalCoverImage = coverImage;
+
+      if (!finalCoverImage) {
+        const match = contentHTML.match(/<img[^>]+src="([^">]+)"/i);
+        finalCoverImage = match ? match[1] : "";
+      }
+
       const blog = await Blog.create({
         title,
         slug,
         contentHTML,
-        coverImage,
+        coverImage: finalCoverImage, // ✅ YAHI FIX HAI
 
-        /* ✅ SEO AUTO FALLBACK */
         seoTitle: seoTitle || title,
         seoDescription:
           seoDescription ||
@@ -56,21 +128,16 @@ export const createBlog = async (req, res) => {
 
       return res.status(201).json(blog);
     } catch (err) {
-      /* 🔥 ONLY handle duplicate slug */
       if (err.code === 11000 && err.keyPattern?.slug) {
         attempt++;
         slug = `${baseSlug}-${attempt}`;
       } else {
         console.error("CREATE BLOG ERROR:", err);
-        return res.status(500).json({
-          message: err.message,
-        });
+        return res.status(500).json({ message: err.message });
       }
     }
   }
 };
-
-
 
 
 
@@ -286,19 +353,69 @@ export const deleteBlog = async (req, res) => {
 /* =========================
    GET PUBLISHED BLOGS (PUBLIC)
 ========================= */
+// export const getPublicBlogs = async (req, res) => {
+//   try {
+//     const limit = parseInt(req.query.limit) || 3;
+
+//     const blogs = await Blog.find({ status: "published" })
+//       .sort({ createdAt: -1 })
+//       .limit(limit)
+//       .select("-__v");
+
+
+//     res.json(blogs);
+//   } catch (err) {
+//     res.status(500).json({ message: err.message });
+//   }
+// };
+// GET /blogs/public?limit=3
+// export const getPublicBlogs = async (req, res) => {
+//   try {
+//     const limit = parseInt(req.query.limit) || 0; // 0 = no limit
+
+//     let query = Blog.find({ status: "published" })
+//       .sort({ createdAt: -1 });
+
+//     if (limit > 0) {
+//       query = query.limit(limit);
+//     }
+
+//     const blogs = await query; // 👈 NO .select()
+
+//     res.json(blogs);
+//   } catch (err) {
+//     res.status(500).json({ message: err.message });
+//   }
+// };
+
 export const getPublicBlogs = async (req, res) => {
   try {
-    const limit = parseInt(req.query.limit) || 3;
+    res.setHeader("Cache-Control", "no-store"); // 🔥 VERY IMPORTANT
 
-    const blogs = await Blog.find({ status: "published" })
-      .sort({ createdAt: -1 })
-      .limit(limit)
-      .select("title slug coverImage excerpt createdAt");
+    const limit = parseInt(req.query.limit);
 
+    let query = Blog.find({ status: "published" })
+      .sort({ createdAt: -1 });
+
+    if (!isNaN(limit) && limit > 0) {
+      query = query.limit(limit);
+    }
+
+    const blogs = await query;
     res.json(blogs);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
+};
+
+
+// HomeBlogs
+
+export const getHomeBlogs = async (req, res) => {
+  const blogs = await Blog.find({ status: "published" })
+    .sort({ createdAt: -1 })
+    .limit(3);
+  res.json(blogs);
 };
 
 

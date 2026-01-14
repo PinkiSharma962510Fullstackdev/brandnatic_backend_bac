@@ -8,6 +8,7 @@ import {
   deleteBlog,
   getPublicBlogs,
   getSinglePublicBlogBySlug,
+   getHomeBlogs,
 } from "../controllers/blog.controller.js";
 
 import { protect } from "../middlewares/auth.middleware.js";
@@ -17,10 +18,12 @@ const router = express.Router();
 
 /* ================= PUBLIC ROUTES (NO AUTH) ================= */
 // 🔓 ONLY READ-ONLY
+router.get("/public/home", getHomeBlogs); 
 router.get("/public", getPublicBlogs);
 router.get("/public/:slug", getSinglePublicBlogBySlug);
 
 /* ================= ADMIN ROUTES (AUTH REQUIRED) ================= */
+
 router.post("/", protect, checkPermission("blogs.create"), createBlog);
 router.get("/", protect, getAllBlogs);
 router.get("/:id", protect, getBlogById);
