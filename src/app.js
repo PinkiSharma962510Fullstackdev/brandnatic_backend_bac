@@ -59,18 +59,13 @@ const app = express();
 
 app.use(
   cors({
-    origin: [
-      "https://www.brandnatic.com",
-      "https://brandnatic.com"
-    ],
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
+    origin: "https://www.brandnatic.com",
+    credentials: true
   })
 );
 
 // ✅ PRE-FLIGHT FIX (MOST IMPORTANT)
-app.options("*", cors());
+// app.options("*", cors());
 
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
