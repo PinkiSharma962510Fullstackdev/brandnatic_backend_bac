@@ -42,6 +42,70 @@
 
 
 
+// import express from "express";
+// import cors from "cors";
+// import rateLimit from "express-rate-limit";
+
+// import authRoutes from "./routes/auth.routes.js";
+// import blogRoutes from "./routes/blog.routes.js";
+// import adminCommentRoutes from "./routes/comment.routes.js";
+// import publicCommentRoutes from "./routes/comment.public.routes.js";
+// import userRoutes from "./routes/user.routes.js";
+// import enquiryRoutes from "./routes/enquiry.routes.js";
+// import subscribeRoutes from "./routes/subscribe.routes.js"; 
+// import sitemapRoute from "./routes/sitemap.route.js";
+
+// const app = express();
+
+// app.use(
+//   cors({
+//     origin: "https://www.brandnatic.com",
+//     credentials: true
+//   })
+// );
+
+// // ✅ PRE-FLIGHT FIX (MOST IMPORTANT)
+// // app.options("*", cors());
+
+// app.use(express.json({ limit: "10mb" }));
+// app.use(express.urlencoded({ limit: "10mb", extended: true }));
+
+// // ================= RATE LIMIT (ENQUIRY ONLY) =================
+// const enquiryLimiter = rateLimit({
+//   windowMs: 10 * 60 * 1000,
+//   max: 2,
+//   message: { message: "Too many enquiries. Please try again later." },
+// });
+
+// // ================= ROUTES =================
+
+// // AUTH / ADMIN
+// app.use("/api/auth", authRoutes);
+// app.use("/api/users", userRoutes);
+
+// // BLOGS
+// app.use("/api/blogs", blogRoutes);
+
+// //  PUBLIC COMMENTS (WEBSITE)
+// app.use("/api/comments", publicCommentRoutes);
+
+// //  ADMIN COMMENTS (DASHBOARD)
+// app.use("/api/admin/comments", adminCommentRoutes);
+
+// // ENQUIRY
+// app.use("/api/enquiry", enquiryLimiter, enquiryRoutes);
+
+// app.use("/api/subscribe", subscribeRoutes);
+
+// app.get("/", (req, res) => {
+//   res.send("API running successfully 🚀");
+// });
+// app.use("/", sitemapRoute);
+
+
+// export default app;
+
+
 import express from "express";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
@@ -52,55 +116,43 @@ import adminCommentRoutes from "./routes/comment.routes.js";
 import publicCommentRoutes from "./routes/comment.public.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import enquiryRoutes from "./routes/enquiry.routes.js";
-import subscribeRoutes from "./routes/subscribe.routes.js"; 
+import subscribeRoutes from "./routes/subscribe.routes.js";
 import sitemapRoute from "./routes/sitemap.route.js";
 
 const app = express();
 
+/* ================= CORS (EXPRESS v5 SAFE) ================= */
 app.use(
   cors({
     origin: "https://www.brandnatic.com",
-    credentials: true
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
-// ✅ PRE-FLIGHT FIX (MOST IMPORTANT)
-// app.options("*", cors());
-
+/* ================= BODY ================= */
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
-// ================= RATE LIMIT (ENQUIRY ONLY) =================
+/* ================= RATE LIMIT ================= */
 const enquiryLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
   max: 2,
   message: { message: "Too many enquiries. Please try again later." },
 });
 
-// ================= ROUTES =================
-
-// AUTH / ADMIN
+/* ================= ROUTES ================= */
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
-
-// BLOGS
 app.use("/api/blogs", blogRoutes);
-
-//  PUBLIC COMMENTS (WEBSITE)
 app.use("/api/comments", publicCommentRoutes);
-
-//  ADMIN COMMENTS (DASHBOARD)
 app.use("/api/admin/comments", adminCommentRoutes);
-
-// ENQUIRY
 app.use("/api/enquiry", enquiryLimiter, enquiryRoutes);
-
 app.use("/api/subscribe", subscribeRoutes);
+app.use("/", sitemapRoute);
 
 app.get("/", (req, res) => {
   res.send("API running successfully 🚀");
 });
-app.use("/", sitemapRoute);
-
 
 export default app;
