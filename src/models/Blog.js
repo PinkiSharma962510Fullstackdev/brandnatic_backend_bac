@@ -34,6 +34,7 @@ const blogSchema = new mongoose.Schema(
   required: true,
   unique: true,
 },
+
  seoTitle: {
       type: String,
       maxlength: 60,
@@ -46,6 +47,18 @@ const blogSchema = new mongoose.Schema(
 
     contentHTML: { type: String, required: true },
     coverImage: String,
+      service: {
+    type: String,
+    required: true,
+    enum: [
+      "SEO Marketing",
+      "AI Automation",
+      "Web Development",
+      "Performance Marketing",
+      "Lead Generation",
+      "Software Development",
+    ],
+  },
 
     status: {
       type: String,
@@ -57,9 +70,16 @@ const blogSchema = new mongoose.Schema(
     comments: [commentSchema],//  ADD
 
     author: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-    },
+  name: {
+    type: String,
+    required: true,
+  },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+  },
+},
+
   },
   { timestamps: true }
 );

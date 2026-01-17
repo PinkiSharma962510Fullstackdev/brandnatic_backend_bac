@@ -78,6 +78,68 @@ console.log("🔥🔥 NEW CREATE BLOG CODE LOADED 🔥🔥");
 // };
 
 
+// export const createBlog = async (req, res) => {
+//   const {
+//     title,
+//     contentHTML,
+//     coverImage,
+//     status,
+//     faqs,
+//     seoTitle,
+//     seoDescription,
+//     slug: customSlug,
+//   } = req.body;
+
+//   if (!title || !contentHTML) {
+//     return res.status(400).json({ message: "Title & content required" });
+//   }
+
+//   const baseSlug = customSlug
+//     ? slugify(customSlug, { lower: true, strict: true })
+//     : slugify(title, { lower: true, strict: true });
+
+//   let slug = baseSlug;
+//   let attempt = 0;
+
+//   while (true) {
+//     try {
+//       // ✅ SAFE AUTO COVER (admin flow unchanged)
+//       let finalCoverImage = coverImage;
+
+//       if (!finalCoverImage) {
+//         const match = contentHTML.match(/<img[^>]+src="([^">]+)"/i);
+//         finalCoverImage = match ? match[1] : "";
+//       }
+
+//       const blog = await Blog.create({
+//         title,
+//         slug,
+//         contentHTML,
+//         coverImage: finalCoverImage, // ✅ YAHI FIX HAI
+
+//         seoTitle: seoTitle || title,
+//         seoDescription:
+//           seoDescription ||
+//           contentHTML.replace(/<[^>]*>/g, "").slice(0, 155),
+
+//         status: status || "draft",
+//         faqs: Array.isArray(faqs) ? faqs : [],
+//       });
+
+//       return res.status(201).json(blog);
+//     } catch (err) {
+//       if (err.code === 11000 && err.keyPattern?.slug) {
+//         attempt++;
+//         slug = `${baseSlug}-${attempt}`;
+//       } else {
+//         console.error("CREATE BLOG ERROR:", err);
+//         return res.status(500).json({ message: err.message });
+//       }
+//     }
+//   }
+// };
+
+
 export const createBlog = async (req, res) => {
   const {
     title,
@@ -88,10 +150,13 @@ export const createBlog = async (req, res) => {
     seoTitle,
     seoDescription,
     slug: customSlug,
+    service, // ✅ ADD
   } = req.body;
 
-  if (!title || !contentHTML) {
-    return res.status(400).json({ message: "Title & content required" });
+  if (!title || !contentHTML || !service) {
+    return res
+      .status(400)
+      .json({ message: "Title, content & service are required" });
   }
 
   const baseSlug = customSlug
@@ -103,7 +168,7 @@ export const createBlog = async (req, res) => {
 
   while (true) {
     try {
-      // ✅ SAFE AUTO COVER (admin flow unchanged)
+      /* ================= AUTO COVER IMAGE ================= */
       let finalCoverImage = coverImage;
 
       if (!finalCoverImage) {
@@ -115,7 +180,9 @@ export const createBlog = async (req, res) => {
         title,
         slug,
         contentHTML,
-        coverImage: finalCoverImage, // ✅ YAHI FIX HAI
+        coverImage: finalCoverImage,
+
+        service, // ✅ SAVE SERVICE
 
         seoTitle: seoTitle || title,
         seoDescription:
@@ -124,6 +191,12 @@ export const createBlog = async (req, res) => {
 
         status: status || "draft",
         faqs: Array.isArray(faqs) ? faqs : [],
+
+        // ✅ AUTHOR FROM LOGIN (AUTO)
+        author: {
+          name: req.user.name || req.user.fullName,
+          userId: req.user._id,
+        },
       });
 
       return res.status(201).json(blog);
