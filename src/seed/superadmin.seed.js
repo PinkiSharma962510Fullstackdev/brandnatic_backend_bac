@@ -16,9 +16,9 @@ const createSuperAdmin = async () => {
     }
 
     await User.create({
-      name: "Pinki sharma",
-      email: "sharmapinki962510@gmail.com",
-      password: await hashPassword("pinki@123"),
+      name: "Super Admin",
+      email: "admin@gmail.com",
+      password: await hashPassword("admin123"),
       role: "superadmin",
       permissions: {
         blogs: { create: true, edit: true, delete: true, publish: true },
