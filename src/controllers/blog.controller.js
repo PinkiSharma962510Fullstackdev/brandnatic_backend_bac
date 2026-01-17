@@ -197,7 +197,10 @@ export const createBlog = async (req, res) => {
           faqs: Array.isArray(faqs) ? faqs : [],
 
           // ✅ CORRECT AUTHOR (Schema-compatible)
-          author: req.user._id,
+          author: {
+  id: req.user._id,
+  name: req.user.name,
+},
         });
 
         return res.status(201).json(blog);
