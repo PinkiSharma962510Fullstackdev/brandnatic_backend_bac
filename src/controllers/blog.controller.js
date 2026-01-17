@@ -326,6 +326,7 @@ export const updateBlog = async (req, res) => {
       seoTitle,
       seoDescription,
       slug: customSlug,
+      service, // ✅ REQUIRED
     } = req.body;
 
     const blog = await Blog.findById(req.params.id);
@@ -334,12 +335,15 @@ export const updateBlog = async (req, res) => {
       return res.status(404).json({ message: "Blog not found" });
     }
 
-    //  basic validation
     if (!title || !contentHTML) {
       return res.status(400).json({ message: "Title & content required" });
     }
 
-    //  SLUG LOGIC (WordPress style)
+    if (!service) {
+      return res.status(400).json({ message: "Service is required" });
+    }
+
+    /* ---------- SLUG LOGIC ---------- */
     const baseSlug = customSlug
       ? slugify(customSlug, { lower: true, strict: true })
       : slugify(title, { lower: true, strict: true });
@@ -347,7 +351,6 @@ export const updateBlog = async (req, res) => {
     let finalSlug = baseSlug;
     let attempt = 0;
 
-    // 🔁 duplicate slug protection
     while (true) {
       const exists = await Blog.findOne({
         slug: finalSlug,
@@ -360,12 +363,13 @@ export const updateBlog = async (req, res) => {
       finalSlug = `${baseSlug}-${attempt}`;
     }
 
-    // ✅ UPDATE FIELDS
+    /* ---------- UPDATE FIELDS ---------- */
     blog.title = title;
     blog.slug = finalSlug;
     blog.contentHTML = contentHTML;
     blog.coverImage = coverImage || blog.coverImage;
     blog.status = status || blog.status;
+    blog.service = service; // ✅ VERY IMPORTANT
 
     blog.seoTitle = seoTitle || title;
     blog.seoDescription =
@@ -376,7 +380,7 @@ export const updateBlog = async (req, res) => {
       blog.faqs = faqs;
     }
 
-    await blog.save();
+    await blog.save(); // validators run automatically
 
     res.json(blog);
   } catch (err) {
