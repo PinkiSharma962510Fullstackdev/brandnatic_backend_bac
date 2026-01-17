@@ -336,7 +336,7 @@ export const updateBlog = async (req, res) => {
       seoTitle,
       seoDescription,
       slug: customSlug,
-      service, // optional now
+      service,
     } = req.body;
 
     const blog = await Blog.findById(req.params.id);
@@ -358,20 +358,28 @@ export const updateBlog = async (req, res) => {
     let attempt = 0;
 
     while (
-      await Blog.findOne({ slug: finalSlug, _id: { $ne: blog._id } })
+      await Blog.findOne({
+        slug: finalSlug,
+        _id: { $ne: blog._id },
+      })
     ) {
       attempt++;
       finalSlug = `${baseSlug}-${attempt}`;
     }
 
-    /* ---------- UPDATE FIELDS ---------- */
+    /* ---------- UPDATE SAFE FIELDS ---------- */
     blog.title = title;
     blog.slug = finalSlug;
     blog.contentHTML = contentHTML;
-    blog.coverImage = coverImage || blog.coverImage;
-    blog.status = status || blog.status;
 
-    // ✅ UPDATE SERVICE ONLY IF SENT
+    if (coverImage !== undefined) {
+      blog.coverImage = coverImage || blog.coverImage;
+    }
+
+    if (status) {
+      blog.status = status;
+    }
+
     if (service) {
       blog.service = service;
     }
@@ -385,7 +393,9 @@ export const updateBlog = async (req, res) => {
       blog.faqs = faqs;
     }
 
-    await blog.save();
+    // blog.author = blog.author;
+
+    await blog.save({ validateModifiedOnly: true });
 
     res.json(blog);
   } catch (err) {
@@ -393,6 +403,7 @@ export const updateBlog = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
 
 
 
